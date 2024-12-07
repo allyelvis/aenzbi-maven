@@ -1,0 +1,48 @@
+name: Maven CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Set up JDK
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # Step 3: Cache Maven dependencies
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+
+    # Step 4: Build and test
+    - name: Build and test
+      run: mvn clean install
+
+    # Step 5: Run SpotBugs for static code analysis
+    - name: SpotBugs Analysis
+      run: mvn spotbugs:check
+
+    # Step 6: Run OWASP Dependency-Check for vulnerabilities
+    - name: OWASP Dependency Check
+      run: mvn dependency-check:check
+
+    # Step 7: Generate test coverage report
+    - name: Generate Test Report
+      run: mvn surefire-report:report
